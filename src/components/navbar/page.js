@@ -1,10 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { CircleCheckIcon, CircleHelpIcon, CircleIcon } from "lucide-react";
-
+import { useRouter } from "next/navigation";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -15,7 +15,7 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 
-// Example links (you can edit them later)
+/* ---------- Menu Links ---------- */
 const components = [
   {
     title: "Write Blog",
@@ -41,86 +41,121 @@ const components = [
 
 export default function NavbarMenu() {
   const isMobile = useIsMobile();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
+
+  // ✅ Check login state
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("currentUser"));
+    setIsLoggedIn(!!user?.email);
+  }, []);
+
+  // ✅ Handle logout
+  const handleLogout = () => {
+    localStorage.removeItem("currentUser");
+    document.cookie = "userEmail=; Max-Age=0; path=/";
+    setIsLoggedIn(false);
+    router.push("/sign-in");
+  };
 
   return (
-    <div className="flex items-center justify-center w-full border-b border-gray-200 bg-white shadow-sm">
-      <NavigationMenu viewport={isMobile}>
-        <NavigationMenuList className="flex-wrap px-6 py-3">
-          {/* Home Menu */}
-          <NavigationMenuItem>
-            <NavigationMenuLink
-              asChild
-              className={navigationMenuTriggerStyle()}
-            >
-              <Link href="/" className="font-semibold text-lg">
-                Open Verse
+    <header className="w-full bg-white/90 backdrop-blur-sm border-b border-gray-200 shadow-sm fixed top-0 left-0 z-50">
+      <div className="max-w-7xl mx-auto flex items-center justify-between px-8 py-3">
+        {/* ---------- Left: Logo ---------- */}
+        <Link
+          href="/"
+          className="text-2xl font-extrabold text-blue-600 hover:text-blue-700 transition-colors"
+        >
+          Open Verse
+        </Link>
+
+        {/* ---------- Center: Menu ---------- */}
+        <div className="flex-1 flex justify-center">
+          <NavigationMenu>
+            <NavigationMenuList>
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className="text-gray-700 font-medium hover:text-blue-600 transition-all text-lg">
+                  Menu
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid gap-2 sm:w-[400px] md:w-[500px] md:grid-cols-2 lg:w-[600px] p-4 bg-white rounded-xl shadow-lg border border-gray-100">
+                    {components.map((component) => (
+                      <ListItem
+                        key={component.title}
+                        title={component.title}
+                        href={component.href}
+                      >
+                        {component.description}
+                      </ListItem>
+                    ))}
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
+        </div>
+
+        {/* ---------- Right: Links & Buttons (even spacing) ---------- */}
+        <div className="flex items-center space-x-4">
+          <Link
+            href="/write"
+            className="hidden md:block text-gray-700 hover:text-blue-600 font-medium transition-colors"
+          >
+            Write
+          </Link>
+
+          <Link
+            href="/profile"
+            className="hidden md:block text-gray-700 hover:text-blue-600 font-medium transition-colors"
+          >
+            Profile
+          </Link>
+
+          {!isLoggedIn ? (
+            <>
+              <Link
+                href="/sign-in"
+                className="hidden md:block text-gray-700 hover:text-blue-600 font-medium transition-colors"
+              >
+                Sign In
               </Link>
-            </NavigationMenuLink>
-          </NavigationMenuItem>
 
-          {/* Main Navigation */}
-          <NavigationMenuItem>
-            <NavigationMenuTrigger>Menu</NavigationMenuTrigger>
-            <NavigationMenuContent>
-              <ul className="grid gap-2 sm:w-[400px] md:w-[500px] md:grid-cols-2 lg:w-[600px] p-4">
-                {components.map((component) => (
-                  <ListItem
-                    key={component.title}
-                    title={component.title}
-                    href={component.href}
-                  >
-                    {component.description}
-                  </ListItem>
-                ))}
-              </ul>
-            </NavigationMenuContent>
-          </NavigationMenuItem>
-
-          <NavigationMenuItem className="hidden md:block">
-            <NavigationMenuLink
-              asChild
-              className={navigationMenuTriggerStyle()}
+              <Button
+                asChild
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm px-5 py-2 font-semibold shadow-sm transition-all duration-300"
+              >
+                <Link href="/sign-up">Sign Up</Link>
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleLogout}
+              className="rounded-full text-sm px-5 py-2 font-semibold shadow-sm transition-all duration-300"
             >
-              <Link href="/write">Write</Link>
-            </NavigationMenuLink>
-          </NavigationMenuItem>
-
-          <NavigationMenuItem className="hidden md:block">
-            <NavigationMenuLink
-              asChild
-              className={navigationMenuTriggerStyle()}
-            >
-              <Link href="/profile">Profile</Link>
-            </NavigationMenuLink>
-          </NavigationMenuItem>
-
-          <NavigationMenuItem className="hidden md:block">
-            <NavigationMenuLink
-              asChild
-              className={navigationMenuTriggerStyle()}
-            >
-              <Link href="/sign-in">Sign In</Link>
-            </NavigationMenuLink>
-          </NavigationMenuItem>
-        </NavigationMenuList>
-      </NavigationMenu>
-    </div>
+              Logout
+            </Button>
+          )}
+        </div>
+      </div>
+    </header>
   );
 }
 
-/* ---------- Helper Components ---------- */
-
+/* ---------- Helper Component ---------- */
 function ListItem({ title, children, href }) {
   return (
     <li>
       <NavigationMenuLink asChild>
-        <Link href={href} className="block p-2 rounded-md hover:bg-gray-50">
-          <div className="text-sm font-medium leading-none text-gray-900">
+        <Link
+          href={href}
+          className="block p-3 rounded-lg hover:bg-blue-50 transition-all duration-300"
+        >
+          <div className="text-base font-semibold text-gray-900 mb-1">
             {title}
           </div>
-          <p className="text-muted-foreground text-sm leading-snug text-gray-600">
-            {children}
-          </p>
+          <p className="text-sm text-gray-600 leading-snug">{children}</p>
         </Link>
       </NavigationMenuLink>
     </li>
